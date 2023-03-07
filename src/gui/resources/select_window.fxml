@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.effect.ColorAdjust?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="433.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controller.Select_Window_Controller">
+   <children>
+      <ListView fx:id="programs" accessibleRole="PARENT" layoutX="54.0" layoutY="95.0" prefHeight="266.0" prefWidth="492.0">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor></ListView>
+      <Label alignment="CENTER" layoutX="243.0" layoutY="31.0" prefHeight="29.0" prefWidth="131.0" text="The Programs" textAlignment="JUSTIFY">
+         <font>
+            <Font name="Rockwell" size="17.0" />
+         </font></Label>
+   </children>
+   <cursor>
+      <Cursor fx:constant="DEFAULT" />
+   </cursor>
+   <effect>
+      <ColorAdjust brightness="-0.05" contrast="0.01" hue="-0.11" saturation="-0.05" />
+   </effect>
+</AnchorPane>
