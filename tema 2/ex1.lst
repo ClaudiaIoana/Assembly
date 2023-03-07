@@ -1,0 +1,65 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; ...
+    14                                      ;(a+d)-(c-b)+c
+    15                                      ;a - byte, b - word, c - double word, d - qword - Unsigned representation
+    16                                      ; AL -BYTE, AX - WORD, EAX - DW, EDX:EAX - QW
+    17                                      
+    18 00000000 0E                          a db 14
+    19 00000001 C801                        b dw 456
+    20 00000003 EF4D0B00                    c dd 740847
+    21 00000007 FF5DD03201000000            d dq 5147483647
+    22                                      
+    23                                  
+    24                                  ; our code starts here
+    25                                  segment code use32 class=code
+    26                                      start:
+    27                                          ; ...
+    28                                          ;(a+d)-(c-b)+c unsigned
+    29                                          ;a + d = byte + quad
+    30                                          
+    31 00000000 B800000000                      mov EAX, 0; we need a qword for the addition so we create one
+    32 00000005 A0[00000000]                    mov AL, byte[a]
+    33 0000000A BA00000000                      mov EDX, 0; we create a dq
+    34 0000000F 0305[07000000]                  add EAX, dword[d+0]; a+d
+    35 00000015 1315[0B000000]                  adc EDX, dword[d+4];the addition with a carry
+    36                                          ;EDX:EAX = a+d
+    37                                          ;EDX = 1
+    38                                          ;EAX = 852516365
+    39                                          
+    40 0000001B 668B1D[03000000]                mov BX, word[c+0]
+    41 00000022 668B0D[05000000]                mov CX, word[c+2]
+    42 00000029 662B1D[01000000]                sub BX, word [b]
+    43 00000030 6683D900                        sbb CX, 0
+    44                                          ;CX:BX = c - b
+    45                                          ;BX = 19495
+    46                                          ;CX = 11
+    47                                          
+    48 00000034 6651                            push CX
+    49 00000036 6653                            push BX
+    50 00000038 5B                              pop EBX
+    51                                          
+    52 00000039 29D8                            sub EAX, EBX
+    53 0000003B 83DA00                          sbb EDX, 0
+    54                                          
+    55 0000003E 0305[03000000]                  add EAX, dword[c]
+    56 00000044 83D200                          adc EDX, 0
+    57                                          
+    58                                          
+    59                                          
+    60                                          
+    61                                          
+    62                                      
+    63                                          ; exit(0)
+    64 00000047 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    65 00000049 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

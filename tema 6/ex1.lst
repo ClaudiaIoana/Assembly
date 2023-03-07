@@ -1,0 +1,63 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ;Read two numbers a and b (in base 16) from the keyboard and calculate a+b. Display the result in base 10
+     4                                  
+     5                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     6                                  global start        
+     7                                  
+     8                                  ; declare external functions needed by our program
+     9                                  extern exit, printf, scanf               ; tell nasm that exit exists even if we won't be defining it
+    10                                  import exit msvcrt.dll
+    11                                  import printf msvcrt.dll
+    12                                  import scanf msvcrt.dll
+    13                                  
+    14                                  ; our data is declared here (the variables needed by our program)
+    15                                  segment data use32 class=data
+    16                                      ; ...
+    17 00000000 00000000                    a dd 0
+    18 00000004 00000000                    b dd 0
+    19 00000008 61203D2000                  message_a db "a = ", 0
+    20 0000000D 62203D2000                  message_b db "b = ", 0
+    21 00000012 612B62203D20256400          message_ab db "a+b = %d", 0
+    22 0000001B 257800                      format_hexa db "%x", 0
+    23                                  
+    24                                  ; our code starts here
+    25                                  segment code use32 class=code
+    26                                      start:
+    27                                          ; ...
+    28                                          
+    29                                          ;printf("a = ")
+    30 00000000 68[08000000]                    push dword message_a ; print a message a = 
+    31 00000005 FF15[00000000]                  call [printf] ; call the print function
+    32 0000000B 83C404                          add esp, 4*1 ; cleaning the parameters from the stack
+    33                                          
+    34                                          ;scanf("%x", a) to read a hexa number
+    35 0000000E 68[00000000]                    push dword a ; push the variable a
+    36 00000013 68[1B000000]                    push dword format_hexa ; push the format for reading
+    37 00000018 FF15[00000000]                  call [scanf] ; call the scanf
+    38 0000001E 83C408                          add esp, 4*2 ; cleaning the parameters from the stack
+    39                                          
+    40                                          ;printf("b = ")
+    41 00000021 68[0D000000]                    push dword message_b ; print a message b = 
+    42 00000026 FF15[00000000]                  call [printf] ; call the print function
+    43 0000002C 83C404                          add esp, 4*1
+    44                                          
+    45                                          ;scanf("%x", b) to read a hexa number
+    46 0000002F 68[04000000]                    push dword b ; push the variable b on the stack
+    47 00000034 68[1B000000]                    push dword format_hexa ; push the format
+    48 00000039 FF15[00000000]                  call [scanf] ; call the scanf
+    49 0000003F 83C408                          add esp, 4*2
+    50                                          
+    51                                          ; a + b
+    52 00000042 A1[00000000]                    mov eax, dword[a]
+    53 00000047 0305[04000000]                  add eax, dword[b]
+    54                                          
+    55                                          ;printf ("a+b= %d", rez) print the number in decimal format
+    56 0000004D 50                              push eax ; a+b
+    57 0000004E 68[12000000]                    push dword message_ab ; "a+b = %d"
+    58 00000053 FF15[00000000]                  call [printf]
+    59 00000059 83C408                          add esp, 4*2
+    60                                  
+    61                                          ; exit(0)
+    62 0000005C 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    63 0000005E FF15[00000000]                  call    [exit]       ; call exit to terminate the program

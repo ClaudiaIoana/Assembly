@@ -1,0 +1,82 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start  
+     5                                  
+     6                                  ;A. Read from a file a number n and then an array of n positive numbers. Print the elements of the array in base 8 on the console (standard output).
+     7                                  ;Ex. File.in
+     8                                  
+     9                                  ;5
+    10                                  ;10 20 15 8 33
+    11                                  ;Will print:  12, 24, 17, 10, 41      
+    12                                  
+    13                                  ; declare external functions needed by our program
+    14                                  extern exit, printf, fscanf, fopen, fclose              ; tell nasm that exit exists even if we won't be defining it
+    15                                  import exit msvcrt.dll
+    16                                  import printf msvcrt.dll
+    17                                  import fscanf msvcrt.dll
+    18                                  import fopen msvcrt.dll
+    19                                  import fclose msvcrt.dll
+    20                                  
+    21                                  ; our data is declared here (the variables needed by our program)
+    22                                  segment data use32 class=data
+    23                                      ; ...
+    24 00000000 00                          len db 0
+    25 00000001 00000000                    number dd 0
+    26 00000005 256400                      format db "%d", 0
+    27 00000008 256F2000                    format_octa db "%o ", 0
+    28 0000000C 46696C652E74787400          file db "File.txt", 0
+    29 00000015 FFFFFFFF                    file_descriptor dd -1
+    30 00000019 7200                        acces_mode db "r", 0
+    31                                      
+    32                                  
+    33                                  ; our code starts here
+    34                                  segment code use32 class=code
+    35                                      start:
+    36                                          ; ...
+    37                                          ;call fopen to create the file
+    38 00000000 68[19000000]                    push dword acces_mode
+    39 00000005 68[0C000000]                    push dword file
+    40 0000000A FF15[00000000]                  call [fopen]
+    41 00000010 83C408                          add esp, 4*2 
+    42                                          
+    43 00000013 A3[15000000]                    mov [file_descriptor], eax
+    44                                          
+    45 00000018 68[00000000]                    push dword len
+    46 0000001D 68[05000000]                    push dword format
+    47 00000022 FF35[15000000]                  push dword [file_descriptor]
+    48 00000028 FF15[00000000]                  call [fscanf]
+    49 0000002E 83C40C                          add esp, 4*3
+    50                                          
+    51 00000031 B900000000                      mov ecx, 0
+    52 00000036 8B0D[00000000]                  mov ecx, dword [len]
+    53 0000003C E331                            jecxz Stop
+    54                                          
+    55                                          My_loop:
+    56 0000003E 51                                  push ecx
+    57                                              
+    58 0000003F 68[01000000]                        push dword number
+    59 00000044 68[05000000]                        push dword format
+    60 00000049 FF35[15000000]                      push dword [file_descriptor]
+    61 0000004F FF15[00000000]                      call [fscanf]
+    62 00000055 83C40C                              add esp, 4*3
+    63                                              
+    64 00000058 A1[01000000]                        mov eax, dword[number]
+    65                                              
+    66 0000005D 50                                  push eax
+    67 0000005E 68[08000000]                        push dword format_octa
+    68 00000063 FF15[00000000]                      call [printf]
+    69 00000069 83C408                              add esp, 4*2
+    70 0000006C 59                                  pop ecx
+    71                                          
+    72 0000006D E2CF                            loop My_loop
+    73                                          
+    74                                          Stop:
+    75                                          
+    76 0000006F FF35[15000000]                  push dword [file_descriptor]
+    77 00000075 FF15[00000000]                  call [fclose] ; close the file
+    78 0000007B 83C404                          add esp, 4
+    79                                          
+    80                                          ; exit(0)
+    81 0000007E 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    82 00000080 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

@@ -1,0 +1,49 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  global concat
+     4                                  
+     5                                  ;data
+     6                                  segment data use32 class=data
+     7 00000000 00000000                    s1 dd 0  ; store here the start address for each of the strings
+     8 00000004 00000000                    s2 dd 0
+     9 00000008 00000000                    result dd 0
+    10 0000000C 2000000000000000            space dd " ", 0
+    11                                  ;code
+    12                                  segment code use32 class=code
+    13                                  concat:
+    14                                      ; [esp] is the return address that was pushed by the call instruction
+    15 00000000 8B442404                    mov eax, [esp + 4] ; first parameter is the last one pushed onto the stack
+    16 00000004 A3[08000000]                mov [result], eax
+    17 00000009 8B442408                    mov eax, [esp + 8] ; each subsequent parameter is 4 bytes "lower" in the stack
+    18 0000000D A3[00000000]                mov [s1], eax
+    19 00000012 8B44240C                    mov eax, [esp + 12]
+    20 00000016 A3[04000000]                mov [s2], eax
+    21                                      
+    22 0000001B 8B35[00000000]              mov esi, [s1]
+    23 00000021 8B3D[08000000]              mov edi, [result]
+    24                                      .loop_s1:
+    25 00000027 AC                              lodsb
+    26 00000028 3C00                            cmp al, 0 ; store all up to the first null character
+    27 0000002A 7403                            je .done_s1
+    28 0000002C AA                              stosb
+    29 0000002D EBF8                        jmp .loop_s1
+    30                                      .done_s1:
+    31                                      
+    32 0000002F 8B35[0C000000]              mov esi, [space]
+    33                                      .loop_s3:
+    34 00000035 AC                              lodsb
+    35 00000036 3C00                            cmp al, 0 ; store all up to the first null character
+    36 00000038 7403                            je .done_s3
+    37 0000003A AA                              stosb
+    38 0000003B EBF8                        jmp .loop_s3
+    39                                      .done_s3:
+    40                                      
+    41 0000003D 8B35[04000000]              mov esi, [s2]
+    42                                      .loop_s2:
+    43 00000043 AC                              lodsb
+    44 00000044 AA                              stosb  ; store the first null character then stop
+    45 00000045 3C00                            cmp al, 0
+    46 00000047 7402                            je .done_s2
+    47 00000049 EBF8                        jmp .loop_s2
+    48                                      .done_s2:
+    49 0000004B C3                          ret ;pops the return address from the stack and moves the execution point to that location

@@ -1,0 +1,106 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ;Given an array S of doublewords, build the array of bytes D formed from bytes of doublewords sorted as unsigned numbers in ascending order.
+     4                                  ;Example:
+     5                                   ;s DD 12345607h, 1A2B3C15h
+     6                                   ;d DB 07h, 12h, 15h, 1Ah, 2Bh, 34h, 3Ch, 56h
+     7                                  
+     8                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     9                                  global start        
+    10                                  
+    11                                  ; declare external functions needed by our program
+    12                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+    13                                  extern printf
+    14                                  import exit msvcrt.dll  
+    15                                  import printf msvcrt.dll
+    16                                    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+    17                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    18                                  
+    19                                  ; our data is declared here (the variables needed by our program)
+    20                                  segment data use32 class=data
+    21                                      ; ...
+    22 00000000 07563412153C2B1A            s dd 12345607h, 1A2B3C15h
+    23                                      len equ $-s
+    24                                      len2 equ $-s-1
+    25 00000008 <res 00000008>              sir resb len; we reserve len bytes
+    26 00000010 <res 00000008>              rez resb len; we reserve len bytes
+    27 00000018 25642000                    format db "%d ", 0
+    28                                  
+    29                                  ; our code starts here
+    30                                  segment code use32 class=code
+    31                                      start:
+    32                                          ; ...
+    33 00000000 B908000000                      mov ecx, len
+    34 00000005 E35D                            JECXZ Skip ; we skip to the end if the string has no elements
+    35                                          
+    36 00000007 BE[00000000]                    mov esi, s
+    37 0000000C BF[08000000]                    mov edi, sir; sir contains the bytes of the doublewords
+    38                                          ;movsb
+    39                                          
+    40                                          MY_LOOP:
+    41 00000011 A4                                  movsb; edi = esi
+    42                                              ;we store the bites from the numbers in the rez string
+    43 00000012 E2FD                            loop MY_LOOP
+    44                                          
+    45                                          
+    46                                          ;SORT:
+    47                                          ;for(i = 0; i< len-1; i++)
+    48                                          ;   for(j = i+1; j < len; j++)
+    49                                          ;       if(a[i] > a[j]){
+    50                                          ;           aux = a[i]
+    51                                          ;           a[i] = a[j]
+    52                                          ;           a[j] = aux
+    53                                          
+    54                                          
+    55 00000014 B908000000                      mov ecx, len
+    56 00000019 83E901                          sub ecx, 1 ;we set the counter for len-1 steps
+    57 0000001C E346                            JECXZ Skip ; we skip to the end if the string had only 1 elem
+    58                                          
+    59                                          ;we are going to use esi to point at the i element
+    60 0000001E BE[08000000]                    mov esi, sir
+    61                                          
+    62                                          for_loop:
+    63 00000023 89F7                                mov edi, esi
+    64 00000025 47                                  inc edi ; edi will point at the j elem
+    65 00000026 8A06                                mov al, [esi]; eax = s[i]
+    66 00000028 51                                  push ecx ; we push ecx on the stack to preserve the value of ecx
+    67                                              ;in the second for we also use ecx
+    68 00000029 E310                                JECXZ End_loop
+    69                                                  for_loop2:
+    70 0000002B 8A1F                                        mov bl, [edi]; ebx = s[j]
+    71 0000002D 38D8                                        cmp al, bl;if(a[i] > a[j])
+    72 0000002F 7607                                        jbe Sorted
+    73 00000031 AA                                              STOSB	;a[j] = a[i], edi = al
+    74 00000032 881E                                            mov [esi], bl;a[i] = a[j]
+    75 00000034 8A06                                            mov al, [esi];we save in al the position for the future comparisons
+    76 00000036 EB01                                            jmp Skip2
+    77                                                      Sorted:
+    78 00000038 47                                              inc edi; we move a[j]
+    79                                                      Skip2:
+    80 00000039 E2F0                                    loop for_loop2
+    81                                              End_loop:
+    82 0000003B 46                                  inc esi;we move a[i]
+    83 0000003C 59                                  pop ecx; we pop the value of ecx for the first loop
+    84 0000003D E2E4                            loop for_loop
+    85                                          
+    86 0000003F BE[08000000]                    mov esi, sir
+    87 00000044 B908000000                      mov ecx, len
+    88                                          
+    89                                          for_loop3:
+    90 00000049 60                                  pushad
+    91 0000004A B800000000                          mov eax, 0
+    92 0000004F 8A06                                mov al, [esi]
+    93 00000051 50                                  push dword eax
+    94 00000052 68[18000000]                        push format
+    95 00000057 FF15[00000000]                      call [printf]
+    96 0000005D 83C408                              add esp, 4*2
+    97 00000060 61                                  popad
+    98 00000061 46                                  inc esi
+    99 00000062 E2E5                            loop for_loop3
+   100                                              
+   101                                          
+   102                                          Skip:
+   103                                      
+   104                                          ; exit(0)
+   105 00000064 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+   106 00000066 FF15[00000000]                  call    [exit]       ; call exit to terminate the program

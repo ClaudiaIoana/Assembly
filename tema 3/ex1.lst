@@ -1,0 +1,69 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ;Given the doubleword A, obtain the integer number n represented on the bits 14-17 of A. Then obtain the doubleword B by rotating A n positions to the left. Finally, obtain the byte C as follows:
+     4                                  ;the bits 0-5 of C are the same as the bits 1-6 of B
+     5                                  ;the bits 6-7 of C are the same as the bits 17-18 of B
+     6                                  
+     7                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     8                                  global start        
+     9                                  
+    10                                  ; declare external functions needed by our program
+    11                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+    12                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+    13                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    14                                  
+    15                                  ; our data is declared here (the variables needed by our program)
+    16                                  segment data use32 class=data
+    17                                      ; ...
+    18 00000000 74533ABF                    a dd 10111111001110100101001101110100b
+    19 00000004 00                          n db 0
+    20 00000005 00000000                    b dd 0
+    21 00000009 00                          c db 0
+    22                                  
+    23                                  ; our code starts here
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                          ; ...
+    27                                          ; for representing n we need a byte (4 bits)
+    28                                          ; n = 1001b
+    29                                  
+    30 00000000 66BB0000                        mov  bx, 0 ; we compute the result in bx
+    31                                  
+    32 00000004 A1[00000000]                    mov  eax, [a] ; we isolate bits 10-12 of B
+    33 00000009 2500C00300                      and  eax, 00000000000000111100000000000000b ; select the bits 14-17 from a
+    34                                          
+    35 0000000E B10E                            mov  cl, 14 ; we move in cl the number of steps with which we want to rotate
+    36 00000010 D3C8                            ror  eax, cl ; we rotate 14 positions to the right
+    37 00000012 A2[04000000]                    mov [n], al; move the result in the variable n
+    38                                          ; n = 9
+    39                                          
+    40 00000017 A1[00000000]                    mov eax, [a]; move a in eax
+    41 0000001C 8A0D[04000000]                  mov cl, [n]; prepare to rotate a with n positions
+    42 00000022 D3C0                            rol eax, cl; rotate a with n positions
+    43                                          ;eax = 01110100101001101110100101111110
+    44                                          
+    45 00000024 A3[05000000]                    mov dword[b], eax; move the result in b
+    46                                          
+    47 00000029 83E03E                          and eax, 00000000000000000000000000111110b; separate the 1-5 bits from b
+    48 0000002C B101                            mov cl, 1
+    49 0000002E D3C8                            ror eax, cl; rotate the number with 1 position
+    50 00000030 89C3                            mov ebx, eax; the bits 0-5 of C are the same as the bits 1-6 of B
+    51                                          ;ebx= 111111b = 3Fh
+    52                                          
+    53                                          ;the bits 6-7 of C are the same as the bits 17-18 of B
+    54 00000032 A1[05000000]                    mov eax, [b]; move b in eax
+    55 00000037 2500000600                      and eax, 00000000000001100000000000000000b; isolate bits 17-18
+    56 0000003C B111                            mov cl, 17
+    57 0000003E D3C8                            ror eax, cl; rotate eax with 17 positions
+    58                                          ;eax = ...011b = ...03h
+    59                                          
+    60 00000040 B106                            mov cl, 6
+    61 00000042 D3C0                            rol eax, cl; rotate the number with 6 positions so that bits in c corespond with eax
+    62 00000044 31C3                            xor ebx, eax; move the bits from eax to ebx
+    63                                          ;ebx = ...011111111b = ..0FFh
+    64                                          
+    65 00000046 881D[09000000]                  mov [c], bl; store the result in c
+    66                                          
+    67                                          ; exit(0)
+    68 0000004C 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    69 0000004E FF15[00000000]                  call    [exit]       ; call exit to terminate the program

@@ -1,0 +1,55 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ;A byte string S is given. Obtain the string D1 which contains all the positive numbers of S and the string D2 which contains all the negative numbers of S.
+     4                                  ;Example:
+     5                                  ;S: 1, 3, -2, -5, 3, -8, 5, 0
+     6                                  ;D1: 1, 3, 3, 5, 0
+     7                                  ;D2: -2, -5, -8
+     8                                  
+     9                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+    10                                  global start        
+    11                                  
+    12                                  ; declare external functions needed by our program
+    13                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+    14                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+    15                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    16                                  
+    17                                  ; our data is declared here (the variables needed by our program)
+    18                                  segment data use32 class=data
+    19                                      ; ...
+    20 00000000 0103FEFB03F80500            S db 1, 3, -2, -5, 3, -8, 5, 0
+    21                                      lenS equ $-S ; to determine the length of the string S
+    22 00000008 <res 00000008>              D1 resb lenS; we reserve lenS bytes
+    23 00000010 <res 00000008>              D2 resb lenS; we reserve lenS bytes
+    24                                  
+    25                                  ; our code starts here
+    26                                  segment code use32 class=code
+    27                                      start:
+    28                                          ; ...
+    29 00000000 B908000000                      mov ecx, lenS
+    30 00000005 BE[08000000]                    mov esi, D1 ; for the positive numbers
+    31 0000000A BF[10000000]                    mov edi, D2 ; for the negative numbers
+    32 0000000F BB00000000                      mov ebx, 0; ebx will be used as a counter
+    33                                          
+    34 00000014 E315                            JECXZ Skip
+    35                                          MY_LOOP:
+    36 00000016 8A83[00000000]                      mov al, [S+ebx]; we put in al the first element of the array
+    37 0000001C 43                                  inc ebx; we move the counter to the next element
+    38                                              
+    39 0000001D 3C00                                cmp al, 0
+    40 0000001F 7D05                                JGE Poz ; we jump if the number is positive
+    41                                                  ; we enter if the number is negative
+    42 00000021 8807                                    mov [edi], al
+    43 00000023 47                                      inc edi
+    44 00000024 EB03                                    jmp Stop
+    45                                              Poz:
+    46 00000026 8806                                    mov [esi], al
+    47 00000028 46                                      inc esi
+    48                                              Stop:
+    49                                             
+    50 00000029 E2EB                            loop MY_LOOP ; we want to know if the zero flag was triggered
+    51                                          Skip: ; if we don't have any elements in the array we leave the program
+    52                                      
+    53                                          ; exit(0)
+    54 0000002B 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    55 0000002D FF15[00000000]                  call    [exit]       ; call exit to terminate the program

@@ -1,0 +1,78 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit, printf, gets, perror, concat, scanf
+     8                                  import exit msvcrt.dll
+     9                                  import printf msvcrt.dll
+    10                                  import perror msvcrt.dll
+    11                                  import gets msvcrt.dll
+    12                                  import scanf msvcrt.dll
+    13                                  
+    14                                  ; read 2 strings from stdin and concatenate them
+    15                                  ;data
+    16                                  segment data use32 class=data
+    17 00000000 00000000                    n dd 0
+    18 00000004 6E203D2000                  message_n  db "n = ", 0
+    19 00000009 00<rept>                    s1 times 101 db 0
+    20 0000006E 00<rept>                    s2 times 101 db 0
+    21 000000D3 <res 000000C8>              result resb 200
+    22 0000019B <res 000000C8>              result_temp resb 200
+    23 00000263 256400                      format_d db "%d", 0
+    24 00000266 257300                      format_string db "%s", 0
+    25 00000269 00<rept>                    rest_text times 101 db 0
+    26 000002CE 2000                        space db " ", 0
+    27 000002D0 00                          poz db 0
+    28 000002D1 00                          poz_line db 0
+    29                                  ;code
+    30                                  segment code use32 class=code
+    31                                  start:
+    32                                      
+    33                                      ;printf("n = ")
+    34 00000000 68[04000000]                push dword message_n ; print a message a = 
+    35 00000005 FF15[00000000]              call [printf] ; call the print function
+    36 0000000B 83C404                      add esp, 4*1 ; cleaning the parameters from the stack
+    37                                      
+    38                                      ;scanf("%d", n) to read a hexa number
+    39 0000000E 68[00000000]                push dword n ; push the variable a
+    40 00000013 68[63020000]                push dword format_d ; push the format for reading
+    41 00000018 FF15[00000000]              call [scanf] ; call the scanf
+    42 0000001E 83C408                      add esp, 4*2 ; cleaning the parameters from the stack
+    43                                          
+    44                                          
+    45 00000021 8B0D[00000000]              mov ecx, dword [n]
+    46 00000027 E340                        jecxz Pas
+    47                                      my_loop2:
+    48 00000029 51                              push ecx
+    49                                          
+    50 0000002A 68[6E000000]                    push s2
+    51 0000002F FF15[00000000]                  call [gets]
+    52 00000035 83C404                          add esp, 4
+    53                                          
+    54 00000038 68[CE020000]                    push space    ; push parameters as per CDECL
+    55 0000003D 68[D3000000]                    push result    ; 
+    56 00000042 68[D3000000]                    push result; 
+    57 00000047 E8(00000000)                    call concat  ;push EIP + 6; jmp concat
+    58 0000004C 83C40C                          add esp, 4 * 3 ; clear the stack
+    59                                              ; concat(result, s1, s2)
+    60                                              
+    61 0000004F 68[6E000000]                    push s2    ; push parameters as per CDECL
+    62 00000054 68[D3000000]                    push result    ; 
+    63 00000059 68[D3000000]                    push result; 
+    64 0000005E E8(00000000)                    call concat  ;push EIP + 6; jmp concat
+    65 00000063 83C40C                          add esp, 4 * 3 ; clear the stack
+    66                                              ; concat(result, s1, s2)
+    67                                          
+    68 00000066 59                              pop ecx
+    69 00000067 E2C0                        loop my_loop2
+    70                                          
+    71                                      Pas:
+    72                                      
+    73 00000069 68[D3000000]                push result
+    74 0000006E FF15[00000000]              call [printf]
+    75 00000074 83C404                      add esp, 4
+    76                                      
+    77 00000077 6A00                        push dword 0
+    78 00000079 FF15[00000000]              call [exit]
